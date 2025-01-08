@@ -6,53 +6,47 @@ This article describes how to use KlipperScreen through a remote connection.
     The experience may not be equal to run KlipperScreen natively.
     Depending on the device or the network you may encounter performance degradation or other issues.
 
-##  On the Host device (for example a Raspberry Pi):
+##  On the Host device:
 
+The host device could be for example a Raspberry Pi
 
-1. [First installl KlipperScreen](Installation.md)
+1. [First install KlipperScreen](Installation.md)
 2. Install a vnc server package, for example:
-```bash
-sudo apt install tigervnc-standalone-server
-```
-3. Create `launch_KlipperScreen.sh`:
+    ```bash
+    sudo apt install tigervnc-standalone-server
+    ```
 
-```bash
-#!/usr/bin/env bash
+3. Create `~/KlipperScreen/scripts/launch_KlipperScreen.sh`:
 
-# Use display 10 to avoid clashing with local X server, if anyy
-Xtigervnc -rfbport 5900 -noreset -AlwaysShared -SecurityTypes none :10&
-DISPLAY=:10 $KS_XCLIENT&
-wait
-```
-4. Restart KlipperScreen or reboot the system:
-```bash
-sudo systemctl service KlipperScreen restart
-```
-5. On KlipperScreen set the following configuration:
+    ```bash
+    #!/bin/bash
+    # Use display 10 to avoid clashing with local X server, if any
+    Xtigervnc -rfbport 5900 -noreset -AlwaysShared -SecurityTypes none :10&
+    DISPLAY=:10 $KS_XCLIENT&
+    wait
+    ```
+    !!! tip
+        To change resolution add: `-geometry 1280x720` to the arguments of Xtigervnc
 
-DPMS: off
+4. Make the script executable
+    ```bash
+    chmod +x ~/KlipperScreen/scripts/launch_KlipperScreen.sh
+    ```
 
-Display timeout: off
-
-![disable_dpms_poweroff](img/disable_dpms_poweroff.png)
+5. Restart KlipperScreen or reboot the system:
+    ```bash
+    sudo systemctl restart KlipperScreen.service
+    ```
 
 ## On the remote device:
 
-1. Installa a VNC viewer and  configure it to the ip of the host.
+Install a VNC viewer and  configure it to the ip of the host.
 
 
-???+ example "Example using an iPad"
+??? example "Example using an iPad"
+    #### Example using an iPad
     * Install a VNC viewer for example: `RealVNC Viewer: Remote Desktop`
-    #### Prevent unwanted rotation of UI:
-    * Go to `Settings` > `General` >  Set `Use side switch to` to `Lock Rotation`
-    #### Avoid accidentally switching between apps:
-    * Go to `Restrictions` > Set passcode > Enable restrictions.
-    * Open
-    * Triple-click "Home" button
-    * Guided access pops up
-    * Press "Start"
-    * Now iPad is locked to VNC viewer until "Guided access" mode is disabled by triple-clicking "Home" button and entering the restrictions password.
-    #### On the VNC viewer:
+    * Open the VNC viewer app
     * Press "+" button at the top right
     * Enter IP address of your print host.
     * Press "Save"
@@ -62,4 +56,28 @@ Display timeout: off
     * VNC client will complain about unencrypted connection. Disable the warning and say "Connect"
     * Use or skip tutorial
     * Press the "Pin" icon to hide the panel.
-    * Enjoy!
+    ##### Prevent unwanted rotation of UI
+    * Go to `Settings` > `General` >  Set `Use side switch to` to `Lock Rotation`
+    ##### Avoid accidentally switching between apps
+    * Go to `Restrictions` > Set passcode > Enable restrictions.
+    * Open
+    * Triple-click "Home" button
+    * Guided access pops up
+    * Press "Start"
+    * Now iPad is locked to VNC viewer until "Guided access" mode is disabled by triple-clicking "Home" button and entering the password.
+
+??? example "Example using an Android device"
+    #### Example using an Android device
+    * Install a VNC viewer for example: `RealVNC Viewer: Remote Desktop`
+    * Open the VNC viewer app
+    * Press "+" button at the right
+    * Enter IP address of your print host.
+    * Press "Save"
+    * Double-click on an icon with name or IP address you have just added.
+    * VNC client may complain about unencrypted connection. Disable the warning and say "Connect"
+    ##### Prevent unwanted rotation of UI
+    * Lock the rotation using the buttons in the notification bar or in device Settings > Screen > Disable "Rotate automatically"
+
+It's recommended to turn off DPMS and Display timeout:
+
+![disable_dpms_poweroff](img/disable_dpms_poweroff.png)

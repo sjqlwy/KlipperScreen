@@ -1,21 +1,28 @@
-# Last resort to make the screen work
+# Last Resort to Make the Screen Work
 
-If the screen never shows the console or bootup text during startup, Then it's typically an improperly installed screen
-See [Physical install issues](Physical_Install.md)
+If your screen never shows the console or bootup text during startup, it is typically due to an improperly installed screen. See [Physical Install Issues](Physical_Install.md) for more information.
 
-![boot](../img/troubleshooting/boot.png)
+![Boot Screen](../img/troubleshooting/boot.png)
 
-If the screen shows the bootup text, but ends in a blinking cursor or login prompt,
-and no matter what you tried in [Troubleshooting](../Troubleshooting.md) you can't make it work, then do this:
+If the screen shows the bootup text but ends with a blinking cursor or login prompt, and no matter what you tried in [Troubleshooting](../Troubleshooting.md) you can't make it work, then follow these steps:
 
-1. Install a distro with a desktop enviromenment
-2. Ensure that the screen is working properly (display and touch)
-3. Install KlipperScreen
-4. Run `sudo systemctl set-default multi-user.target`
-5. Reboot
+1. **Install a Distro with a Desktop Environment**  
+   [Click to learn how to check](./Desktop.md)
 
-If it still doesn't work, or you did something else to make it work and want to share:
+2. **Ensure Proper Functionality**  
+   Make sure the screen is working properly, including both display and touch functionality.
 
-[Contact us](../Contact.md)
+3. **Deactivate the Desktop Environment for KlipperScreen**  
+   To allow KlipperScreen to run exclusively, enter the following command in a terminal and press enter:
+   ```sh
+   sudo systemctl set-default multi-user.target && sudo reboot
+   ```
 
-Remember to share the logs, as those aid a lot in the troubleshooting.
+4. **Reboot and Install KlipperScreen**  
+   Wait for the system to reboot and then proceed to install KlipperScreen.
+
+If it still doesn't work, or if you did something else to make it work and want to share your solution:
+
+[Contact Us](../Contact.md)
+
+Remember to share the logs, as they are crucial for troubleshooting.

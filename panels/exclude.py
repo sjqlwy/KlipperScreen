@@ -1,4 +1,5 @@
 import logging
+
 import gi
 
 gi.require_version("Gtk", "3.0")
@@ -9,11 +10,10 @@ from ks_includes.widgets.objectmap import ObjectMap
 
 class Panel(ScreenPanel):
     def __init__(self, screen, title):
+        title = title or _("Exclude Object")
         super().__init__(screen, title)
         self._screen = screen
-        self.object_list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.object_list.set_valign(Gtk.Align.CENTER)
-        self.object_list.set_halign(Gtk.Align.START)
+        self.object_list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
         self.buttons = {}
         self.current_object = self._gtk.Button("extrude", "", scale=self.bts, position=Gtk.PositionType.LEFT, lines=1)
         self.current_object.connect("clicked", self.exclude_current)
@@ -28,10 +28,8 @@ class Panel(ScreenPanel):
 
         scroll = self._gtk.ScrolledWindow()
         scroll.add(self.object_list)
-        scroll.set_halign(Gtk.Align.CENTER)
 
-        grid = self._gtk.HomogeneousGrid()
-        grid.set_row_homogeneous(False)
+        grid = Gtk.Grid(column_homogeneous=True)
         grid.attach(self.current_object, 0, 0, 2, 1)
         grid.attach(Gtk.Separator(), 0, 1, 2, 1)
 
@@ -40,14 +38,11 @@ class Panel(ScreenPanel):
             if self._screen.vertical_mode:
                 grid.attach(self.labels['map'], 0, 2, 2, 1)
                 grid.attach(scroll, 0, 3, 2, 1)
-                scroll.set_size_request(self._gtk.content_width, -1)
             else:
                 grid.attach(self.labels['map'], 0, 2, 1, 1)
                 grid.attach(scroll, 1, 2, 1, 1)
-                scroll.set_size_request((self._screen.width * .9) // 2, -1)
         else:
             grid.attach(scroll, 0, 2, 2, 1)
-            scroll.set_size_request(self._gtk.content_width, -1)
 
         self.content.add(grid)
         self.content.show_all()
@@ -81,7 +76,10 @@ class Panel(ScreenPanel):
         )
 
     def exclude_current(self, widget):
-        self.exclude_object(widget, f"{self.current_object.get_label()}")
+        current = self._printer.data["exclude_object"]["current_object"]
+        if current is None:
+            return
+        self.exclude_object(widget, f"{current}")
 
     def process_update(self, action, data):
         if action == "notify_status_update":

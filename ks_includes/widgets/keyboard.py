@@ -1,4 +1,3 @@
-import logging
 import os
 
 import gi
@@ -10,7 +9,7 @@ from gi.repository import Gtk, GLib
 class Keyboard(Gtk.Box):
     langs = ["de", "en", "fr", "es"]
 
-    def __init__(self, screen, close_cb, entry=None):
+    def __init__(self, screen, close_cb, entry=None, box=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.shift = []
         self.shift_active = False
@@ -19,11 +18,30 @@ class Keyboard(Gtk.Box):
         self.keyboard.set_direction(Gtk.TextDirection.LTR)
         self.timeout = self.clear_timeout = None
         self.entry = entry
+        self.purpose = self.entry.get_input_purpose()
+        self.box = box or None
 
         language = self.detect_language(screen._config.get_main_config().get("language", None))
-        logging.info(f"Keyboard {language}")
 
-        if language == "de":
+        if self.purpose == Gtk.InputPurpose.DIGITS:
+            self.keys = [
+                [
+                    ["7", "8", "9"],
+                    ["4", "5", "6"],
+                    ["1", "2", "3"],
+                    ["↓", "0", "⌫"]
+                ]
+            ]
+        elif self.purpose == Gtk.InputPurpose.NUMBER:
+            self.keys = [
+                [
+                    ["7", "8", "9", "⌫"],
+                    ["4", "5", "6", "+"],
+                    ["1", "2", "3", "-"],
+                    ["↓", "0", ".", "↓"]
+                ]
+            ]
+        elif language == "de":
             self.keys = [
                 [
                     ["q", "w", "e", "r", "t", "z", "u", "i", "o", "p", "ü"],
@@ -122,8 +140,6 @@ class Keyboard(Gtk.Box):
                         self.buttons[p][r][k] = screen.gtk.Button("arrow-down", scale=.6)
                     else:
                         self.buttons[p][r][k] = screen.gtk.Button(label=key, lines=1)
-                    self.buttons[p][r][k].set_hexpand(True)
-                    self.buttons[p][r][k].set_vexpand(True)
                     self.buttons[p][r][k].connect('button-press-event', self.repeat, key)
                     self.buttons[p][r][k].connect('button-release-event', self.release)
                     self.buttons[p][r][k].get_style_context().add_class("keyboard_pad")
@@ -147,6 +163,17 @@ class Keyboard(Gtk.Box):
             self.keyboard.remove_row(0)
         self.pallet_nr = p
         columns = 0
+
+        if self.purpose in (Gtk.InputPurpose.DIGITS, Gtk.InputPurpose.NUMBER):
+            for r, row in enumerate(self.keys[p]):
+                for k, key in enumerate(row):
+                    x = k * 2
+                    self.keyboard.attach(self.buttons[p][r][k], x, r, 2, 1)
+                    if x > columns:
+                        columns = x
+            self.show_all()
+            return
+
         for r, row in enumerate(self.keys[p][:-1]):
             for k, key in enumerate(row):
                 x = k * 2 + 1 if r == 1 else k * 2
@@ -191,7 +218,7 @@ class Keyboard(Gtk.Box):
         if key == "⌫":
             Gtk.Entry.do_backspace(self.entry)
         elif key == "↓":
-            self.close_cb()
+            self.close_cb(entry=self.entry, box=self.box)
             return
         elif key == "↑":
             self.toggle_shift()
@@ -229,9 +256,9 @@ class Keyboard(Gtk.Box):
 
     def toggle_shift(self):
         self.shift_active = not self.shift_active
-        if self.shift_active:
-            for widget in self.shift:
+        widget: Gtk.Widget
+        for widget in self.shift:
+            if self.shift_active:
                 widget.get_style_context().add_class("active")
-        else:
-            for widget in self.shift:
+            else:
                 widget.get_style_context().remove_class("active")

@@ -1,5 +1,6 @@
-import mpv
 import logging
+import mpv
+
 import gi
 
 gi.require_version("Gtk", "3.0")
@@ -10,6 +11,7 @@ from ks_includes.screen_panel import ScreenPanel
 
 class Panel(ScreenPanel):
     def __init__(self, screen, title):
+        title = title or _("Camera")
         super().__init__(screen, title)
         self.mpv = None
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -50,19 +52,23 @@ class Panel(ScreenPanel):
             logging.info("camera URL is relative")
             endpoint = self._screen.apiclient.endpoint.split(':')
             url = f"{endpoint[0]}:{endpoint[1]}{url}"
-        vf = ""
+        if '/webrtc' in url:
+            self._screen.show_popup_message(_('WebRTC is not supported by the backend trying Stream'))
+            url = url.replace('/webrtc', '/stream')
+        vf_list = []
         if cam["flip_horizontal"]:
-            vf += "hflip,"
+            vf_list.append("hflip")
         if cam["flip_vertical"]:
-            vf += "vflip,"
-        vf += f"rotate:{cam['rotation']*3.14159/180}"
-        logging.info(f"video filters: {vf}")
+            vf_list.append("vflip")
+        if cam["rotation"] != 0:
+            vf_list.append(f"rotate:{cam['rotation'] * 3.14159 / 180}")
+        logging.info(f"video filters: {vf_list}")
 
         if self.mpv:
             self.mpv.terminate()
         self.mpv = mpv.MPV(fullscreen=True, log_handler=self.log, vo='gpu,wlshm,xv,x11')
 
-        self.mpv.vf = vf
+        self.mpv.vf = ','.join(vf_list)
 
         with suppress(Exception):
             self.mpv.profile = 'sw-fast'
@@ -92,6 +98,14 @@ class Panel(ScreenPanel):
             self._screen._menu_go_back()
 
     def log(self, loglevel, component, message):
-        logging.debug(f'[{loglevel}] {component}: {message}')
-        if loglevel == 'error' and 'No Xvideo support found' not in message:
+        if (
+            'unable to decode' in message  # skip proprietary app fields errors
+            or 'No Xvideo support found' in message  # will fall back to other vo automatically
+            or 'GBM' in message  # will fall back to other vo automatically
+            or 'open TTY for VT control' in message  # not important to notify in the UI
+            or 'youtube-dl' in message  # needed for some streams, not relevant for our case
+        ):
+            return
+        if loglevel == 'error':
             self._screen.show_popup_message(f'{message}')
+        logging.debug(f'[{loglevel}] {component}: {message}')
